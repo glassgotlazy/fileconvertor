@@ -2,16 +2,13 @@ import streamlit as st
 from PIL import Image
 import io
 import base64
-from pydub import AudioSegment
-import tempfile
 import os
-from docx import Document
 from fpdf import FPDF
 import pandas as pd
 
 # Page configuration with SEO
 st.set_page_config(
-    page_title="Free File Format Converter Online - Audio, Video, Image, Document Converter",
+    page_title="Free File Format Converter Online - Image, Document, Spreadsheet Converter",
     page_icon="🔄",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -24,9 +21,8 @@ st.set_page_config(
         
         **Supported Conversions:**
         - Images: PNG, JPG, WEBP, BMP, ICO
-        - Audio: MP3, WAV, OGG
-        - Documents: TXT, PDF, DOCX
-        - Spreadsheets: CSV, XLSX
+        - Documents: TXT to PDF
+        - Spreadsheets: CSV ↔ XLSX
         
         Made with ❤️ using Streamlit
         """
@@ -35,150 +31,388 @@ st.set_page_config(
 
 # SEO Meta Tags
 st.markdown("""
-<meta name="description" content="Free online file format converter. Convert images (PNG, JPG, WEBP), audio (MP3, WAV), documents (PDF, DOCX, TXT), and more. Fast, secure, no registration required.">
-<meta name="keywords" content="file converter, format converter, image converter, audio converter, PDF converter, document converter, free online converter, PNG to JPG, MP3 to WAV">
+<meta name="description" content="Free online file format converter. Convert images (PNG, JPG, WEBP), documents (PDF, TXT), spreadsheets (CSV, XLSX). Fast, secure, no registration required.">
+<meta name="keywords" content="file converter, format converter, image converter, PDF converter, document converter, free online converter, PNG to JPG, CSV to Excel">
 <meta name="author" content="Your Name">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="Free File Format Converter Online - Convert Any File">
-<meta property="og:description" content="Convert files between different formats instantly. Images, audio, documents - all free with no registration.">
+<meta property="og:description" content="Convert files between different formats instantly. Images, documents, spreadsheets - all free with no registration.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 """, unsafe_allow_html=True)
 
-# Custom CSS
+# Enhanced Custom CSS
 st.markdown("""
 <style>
-    /* Main styling */
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+    
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Animated gradient background */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
     
     .main .block-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 25px;
+        padding: 2.5rem;
+        box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
     
+    /* Title animations */
     .main-title {
         text-align: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 3.5rem;
+        background-clip: text;
+        font-size: 4rem;
         font-weight: 800;
         margin-bottom: 0.5rem;
+        animation: titleFloat 3s ease-in-out infinite;
+        letter-spacing: -2px;
+    }
+    
+    @keyframes titleFloat {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
     
     .subtitle {
         text-align: center;
         color: #6c757d;
-        font-size: 1.3rem;
-        margin-bottom: 2rem;
+        font-size: 1.4rem;
+        margin-bottom: 2.5rem;
+        font-weight: 500;
+        animation: fadeInUp 1s ease;
     }
     
-    /* Conversion cards */
-    .conversion-card {
-        background: white;
-        border-radius: 15px;
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Feature cards */
+    .feature-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 20px;
         padding: 2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         margin: 1rem 0;
-        border-left: 5px solid #667eea;
-        transition: transform 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 2px solid transparent;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
     
-    .conversion-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: opacity 0.4s;
+        z-index: 0;
     }
     
-    /* Buttons */
+    .feature-card:hover::before {
+        opacity: 0.05;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
+        border-color: #667eea;
+    }
+    
+    /* Buttons with gradient and glow */
     .stButton>button {
         width: 100%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        border-radius: 12px;
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        border-radius: 15px;
+        padding: 1rem 2.5rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stButton>button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    .stButton>button:hover::before {
+        width: 300px;
+        height: 300px;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
     
+    .stButton>button:active {
+        transform: translateY(0) scale(0.98);
+    }
+    
+    /* Download button with success color */
     .stDownloadButton>button {
         width: 100%;
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         color: white;
         border: none;
-        border-radius: 12px;
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+        border-radius: 15px;
+        padding: 1rem 2.5rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        box-shadow: 0 8px 25px rgba(56, 239, 125, 0.4);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .stDownloadButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(56, 239, 125, 0.6);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(56, 239, 125, 0.6);
+        background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
     }
     
-    /* Tabs */
+    /* Beautiful tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 15px;
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 15px;
-        padding: 0.7rem;
+        border-radius: 20px;
+        padding: 1rem;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
     }
     
     .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
+        border-radius: 15px;
+        padding: 14px 28px;
+        font-weight: 700;
         color: #495057;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        font-size: 1.05rem;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         color: white !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        border-color: rgba(255, 255, 255, 0.3);
     }
     
-    /* Success box */
+    /* Success box with animation */
     .success-box {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         color: white;
-        padding: 1.5rem;
-        border-radius: 15px;
+        padding: 1.8rem;
+        border-radius: 20px;
         text-align: center;
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin: 1rem 0;
-        box-shadow: 0 8px 25px rgba(56, 239, 125, 0.4);
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 1.5rem 0;
+        box-shadow: 0 10px 35px rgba(56, 239, 125, 0.4);
+        animation: successPulse 2s ease infinite;
     }
     
-    /* File info */
+    @keyframes successPulse {
+        0%, 100% {
+            box-shadow: 0 10px 35px rgba(56, 239, 125, 0.4);
+        }
+        50% {
+            box-shadow: 0 10px 50px rgba(56, 239, 125, 0.6);
+        }
+    }
+    
+    /* File info card */
     .file-info {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
         margin: 1rem 0;
-        border-left: 4px solid #667eea;
+        border-left: 5px solid #667eea;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .file-info:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    /* File uploader styling */
+    .stFileUploader {
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .stFileUploader:hover {
+        transform: scale(1.02);
+    }
+    
+    /* Info/Warning boxes */
+    .stAlert {
+        border-radius: 15px;
+        border-left: 5px solid;
+        font-weight: 500;
+        animation: slideInLeft 0.5s ease;
+    }
+    
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Image preview styling */
+    .stImage {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .stImage:hover {
+        transform: scale(1.03);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+    
+    /* Selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .stSelectbox > div > div:hover {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Radio buttons */
+    .stRadio > div {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 15px;
+    }
+    
+    /* Text area */
+    .stTextArea textarea {
+        border-radius: 15px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .stTextArea textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Dataframe styling */
+    .stDataFrame {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Spinner animation */
+    .stSpinner > div {
+        border-color: #667eea !important;
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        transform: translateX(5px);
+    }
+    
+    /* Metric styling */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Caption styling */
+    .caption {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.95rem;
+    }
+    
+    /* Footer gradient */
+    .footer-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        animation: gradientShift 10s ease infinite;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Title
+# Title with emoji animation
 st.markdown('<h1 class="main-title">🔄 File Format Converter</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Convert files between formats instantly - Free & Secure!</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">✨ Convert files between formats instantly - Fast, Free & Beautiful! ✨</p>', unsafe_allow_html=True)
 
 # Helper functions
 def get_file_size(file):
@@ -216,29 +450,6 @@ def convert_image(input_file, output_format):
         st.error(f"Error converting image: {str(e)}")
         return None
 
-def convert_audio(input_file, output_format):
-    """Convert audio to different format"""
-    try:
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(input_file.name)[1]) as tmp_input:
-            tmp_input.write(input_file.getvalue())
-            tmp_input_path = tmp_input.name
-        
-        # Load audio
-        audio = AudioSegment.from_file(tmp_input_path)
-        
-        # Export to new format
-        output_buffer = io.BytesIO()
-        audio.export(output_buffer, format=output_format.lower())
-        
-        # Cleanup
-        os.unlink(tmp_input_path)
-        
-        return output_buffer.getvalue()
-    except Exception as e:
-        st.error(f"Error converting audio: {str(e)}")
-        return None
-
 def convert_text_to_pdf(text_content, filename="document.pdf"):
     """Convert text to PDF"""
     try:
@@ -248,7 +459,7 @@ def convert_text_to_pdf(text_content, filename="document.pdf"):
         
         # Split text into lines and add to PDF
         for line in text_content.split('\n'):
-            pdf.multi_cell(0, 10, line)
+            pdf.multi_cell(0, 10, line.encode('latin-1', 'replace').decode('latin-1'))
         
         # Save to buffer
         buffer = io.BytesIO()
@@ -281,18 +492,19 @@ def convert_xlsx_to_csv(xlsx_file):
         return None
 
 # Main tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🖼️ Image Converter", "🎵 Audio Converter", "📄 Document Converter", "📊 Spreadsheet Converter"])
+tab1, tab2, tab3 = st.tabs(["🖼️ Image Converter", "📄 Document Converter", "📊 Spreadsheet Converter"])
 
 # TAB 1: Image Converter
 with tab1:
+    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
     st.markdown("### 🖼️ Image Format Converter")
-    st.info("Convert between PNG, JPG, WEBP, BMP, ICO formats")
+    st.info("✨ Convert between PNG, JPG, WEBP, BMP, ICO formats instantly!")
     
     col1, col2 = st.columns([2, 1])
     
     with col1:
         uploaded_image = st.file_uploader(
-            "Upload Image",
+            "📁 Upload Your Image",
             type=['png', 'jpg', 'jpeg', 'webp', 'bmp', 'ico'],
             key="image_upload",
             help="Supported: PNG, JPG, WEBP, BMP, ICO"
@@ -300,7 +512,7 @@ with tab1:
     
     with col2:
         output_format_img = st.selectbox(
-            "Convert to:",
+            "🎯 Convert to:",
             ["PNG", "JPG", "WEBP", "BMP", "ICO"],
             key="img_format"
         )
@@ -309,19 +521,19 @@ with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.image(uploaded_image, caption="Original Image", use_container_width=True)
+            st.image(uploaded_image, caption="📸 Original Image", use_container_width=True)
             st.markdown(f'<div class="file-info">📁 <b>File:</b> {uploaded_image.name}<br>📊 <b>Size:</b> {get_file_size(uploaded_image)}</div>', unsafe_allow_html=True)
         
         with col2:
-            if st.button("🔄 Convert Image", key="convert_img_btn", type="primary"):
-                with st.spinner("Converting image..."):
+            if st.button("🔄 Convert Image Now", key="convert_img_btn", type="primary"):
+                with st.spinner("✨ Converting your image..."):
                     converted = convert_image(uploaded_image, output_format_img)
                     
                     if converted:
                         st.markdown('<div class="success-box">✅ Image Converted Successfully!</div>', unsafe_allow_html=True)
                         
                         # Preview converted image
-                        st.image(converted, caption=f"Converted to {output_format_img}", use_container_width=True)
+                        st.image(converted, caption=f"✨ Converted to {output_format_img}", use_container_width=True)
                         
                         # Get size of converted file
                         converted_size = len(converted)
@@ -341,112 +553,63 @@ with tab1:
                             f"image/{output_format_img.lower()}",
                             use_container_width=True
                         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 2: Audio Converter
+# TAB 2: Document Converter
 with tab2:
-    st.markdown("### 🎵 Audio Format Converter")
-    st.info("Convert between MP3, WAV, OGG formats")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        uploaded_audio = st.file_uploader(
-            "Upload Audio File",
-            type=['mp3', 'wav', 'ogg', 'm4a', 'flac'],
-            key="audio_upload",
-            help="Supported: MP3, WAV, OGG, M4A, FLAC"
-        )
-    
-    with col2:
-        output_format_audio = st.selectbox(
-            "Convert to:",
-            ["MP3", "WAV", "OGG"],
-            key="audio_format"
-        )
-    
-    if uploaded_audio:
-        st.markdown(f'<div class="file-info">📁 <b>File:</b> {uploaded_audio.name}<br>📊 <b>Size:</b> {get_file_size(uploaded_audio)}</div>', unsafe_allow_html=True)
-        
-        st.audio(uploaded_audio, format=f'audio/{os.path.splitext(uploaded_audio.name)[1][1:]}')
-        
-        if st.button("🔄 Convert Audio", key="convert_audio_btn", type="primary"):
-            with st.spinner("Converting audio... This may take a moment"):
-                converted = convert_audio(uploaded_audio, output_format_audio)
-                
-                if converted:
-                    st.markdown('<div class="success-box">✅ Audio Converted Successfully!</div>', unsafe_allow_html=True)
-                    
-                    # Preview
-                    st.audio(converted, format=f'audio/{output_format_audio.lower()}')
-                    
-                    # Get size
-                    converted_size = len(converted)
-                    if converted_size < 1024 * 1024:
-                        size_str = f"{converted_size / 1024:.2f} KB"
-                    else:
-                        size_str = f"{converted_size / (1024 * 1024):.2f} MB"
-                    
-                    st.info(f"📊 Converted Size: {size_str}")
-                    
-                    # Download
-                    original_name = os.path.splitext(uploaded_audio.name)[0]
-                    st.download_button(
-                        "⬇️ Download Converted Audio",
-                        converted,
-                        f"{original_name}.{output_format_audio.lower()}",
-                        f"audio/{output_format_audio.lower()}",
-                        use_container_width=True
-                    )
-
-# TAB 3: Document Converter
-with tab3:
+    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
     st.markdown("### 📄 Document Format Converter")
-    st.info("Convert between TXT, PDF, DOCX formats")
+    st.info("✨ Convert text to PDF or convert between CSV and Excel!")
     
     conversion_type = st.radio(
-        "Select Conversion:",
-        ["Text to PDF", "CSV to Excel", "Excel to CSV"],
+        "📌 Select Conversion Type:",
+        ["📝 Text to PDF", "📊 CSV to Excel", "📈 Excel to CSV"],
         horizontal=True
     )
     
-    if conversion_type == "Text to PDF":
+    if conversion_type == "📝 Text to PDF":
         text_input = st.text_area(
-            "Enter or paste your text:",
+            "✍️ Enter or paste your text:",
             height=300,
-            placeholder="Type or paste your text here..."
+            placeholder="Start typing or paste your text here...\n\nYour text will be converted to a professional PDF document!"
         )
         
         if text_input:
-            st.info(f"📝 Characters: {len(text_input)} | Words: {len(text_input.split())}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("📝 Characters", len(text_input))
+            with col2:
+                st.metric("📖 Words", len(text_input.split()))
             
-            if st.button("🔄 Convert to PDF", type="primary"):
-                with st.spinner("Creating PDF..."):
+            if st.button("🔄 Convert to PDF", type="primary", key="pdf_btn"):
+                with st.spinner("📄 Creating your PDF document..."):
                     pdf_data = convert_text_to_pdf(text_input)
                     
                     if pdf_data:
                         st.markdown('<div class="success-box">✅ PDF Created Successfully!</div>', unsafe_allow_html=True)
                         
                         st.download_button(
-                            "⬇️ Download PDF",
+                            "⬇️ Download PDF Document",
                             pdf_data,
                             "document.pdf",
                             "application/pdf",
                             use_container_width=True
                         )
     
-    elif conversion_type == "CSV to Excel":
-        csv_file = st.file_uploader("Upload CSV File", type=['csv'], key="csv_upload")
+    elif conversion_type == "📊 CSV to Excel":
+        csv_file = st.file_uploader("📁 Upload CSV File", type=['csv'], key="csv_upload")
         
         if csv_file:
             st.markdown(f'<div class="file-info">📁 <b>File:</b> {csv_file.name}<br>📊 <b>Size:</b> {get_file_size(csv_file)}</div>', unsafe_allow_html=True)
             
             # Preview CSV
             df = pd.read_csv(csv_file)
+            st.markdown("#### 👀 Preview (First 10 Rows)")
             st.dataframe(df.head(10), use_container_width=True)
-            st.caption(f"Showing first 10 rows of {len(df)} total rows")
+            st.caption(f"Showing 10 of {len(df)} total rows • {len(df.columns)} columns")
             
-            if st.button("🔄 Convert to Excel", type="primary"):
-                with st.spinner("Converting to Excel..."):
+            if st.button("🔄 Convert to Excel", type="primary", key="csv_btn"):
+                with st.spinner("📊 Converting to Excel format..."):
                     xlsx_data = convert_csv_to_xlsx(csv_file)
                     
                     if xlsx_data:
@@ -462,18 +625,19 @@ with tab3:
                         )
     
     else:  # Excel to CSV
-        xlsx_file = st.file_uploader("Upload Excel File", type=['xlsx', 'xls'], key="xlsx_upload")
+        xlsx_file = st.file_uploader("📁 Upload Excel File", type=['xlsx', 'xls'], key="xlsx_upload")
         
         if xlsx_file:
             st.markdown(f'<div class="file-info">📁 <b>File:</b> {xlsx_file.name}<br>📊 <b>Size:</b> {get_file_size(xlsx_file)}</div>', unsafe_allow_html=True)
             
             # Preview Excel
             df = pd.read_excel(xlsx_file)
+            st.markdown("#### 👀 Preview (First 10 Rows)")
             st.dataframe(df.head(10), use_container_width=True)
-            st.caption(f"Showing first 10 rows of {len(df)} total rows")
+            st.caption(f"Showing 10 of {len(df)} total rows • {len(df.columns)} columns")
             
-            if st.button("🔄 Convert to CSV", type="primary"):
-                with st.spinner("Converting to CSV..."):
+            if st.button("🔄 Convert to CSV", type="primary", key="xlsx_btn"):
+                with st.spinner("📊 Converting to CSV format..."):
                     csv_data = convert_xlsx_to_csv(xlsx_file)
                     
                     if csv_data:
@@ -487,20 +651,22 @@ with tab3:
                             "text/csv",
                             use_container_width=True
                         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# TAB 4: Spreadsheet Converter (Alternative view)
-with tab4:
-    st.markdown("### 📊 Spreadsheet Converter")
-    st.info("Batch convert CSV ↔ Excel files")
+# TAB 3: Spreadsheet Converter (Quick Convert)
+with tab3:
+    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+    st.markdown("### 📊 Smart Spreadsheet Converter")
+    st.info("✨ Auto-detects your file type and suggests the best conversion!")
     
     st.markdown("""
-    **Quick Conversions:**
-    - CSV → Excel: Add formatting, multiple sheets
-    - Excel → CSV: Simple text format, universal compatibility
+    **⚡ Quick Conversions:**
+    - 📊 CSV → Excel: Add formatting and multiple sheets support
+    - 📈 Excel → CSV: Universal compatibility for all platforms
     """)
     
     uploaded_file = st.file_uploader(
-        "Upload Spreadsheet",
+        "📁 Upload Your Spreadsheet",
         type=['csv', 'xlsx', 'xls'],
         key="spreadsheet_upload"
     )
@@ -508,120 +674,146 @@ with tab4:
     if uploaded_file:
         file_ext = os.path.splitext(uploaded_file.name)[1].lower()
         
-        st.markdown(f'<div class="file-info">📁 <b>File:</b> {uploaded_file.name}<br>📊 <b>Size:</b> {get_file_size(uploaded_file)}<br>📝 <b>Type:</b> {file_ext[1:].upper()}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="file-info">📁 <b>File:</b> {uploaded_file.name}<br>📊 <b>Size:</b> {get_file_size(uploaded_file)}<br>📝 <b>Format:</b> {file_ext[1:].upper()}</div>', unsafe_allow_html=True)
         
         # Auto-detect and suggest conversion
         if file_ext == '.csv':
-            st.success("CSV file detected → Convert to Excel")
+            st.success("✅ CSV file detected → Perfect for Excel conversion!")
             
             df = pd.read_csv(uploaded_file)
+            st.markdown("#### 👀 Data Preview")
             st.dataframe(df.head(10), use_container_width=True)
+            st.caption(f"📊 {len(df)} rows × {len(df.columns)} columns")
             
             if st.button("🔄 Convert to Excel", key="auto_csv", type="primary"):
-                xlsx_data = convert_csv_to_xlsx(uploaded_file)
-                if xlsx_data:
-                    st.markdown('<div class="success-box">✅ Converted Successfully!</div>', unsafe_allow_html=True)
-                    st.download_button(
-                        "⬇️ Download Excel",
-                        xlsx_data,
-                        f"{os.path.splitext(uploaded_file.name)[0]}.xlsx",
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
+                with st.spinner("✨ Converting to Excel..."):
+                    xlsx_data = convert_csv_to_xlsx(uploaded_file)
+                    if xlsx_data:
+                        st.markdown('<div class="success-box">✅ Converted Successfully!</div>', unsafe_allow_html=True)
+                        st.download_button(
+                            "⬇️ Download Excel File",
+                            xlsx_data,
+                            f"{os.path.splitext(uploaded_file.name)[0]}.xlsx",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
         else:
-            st.success("Excel file detected → Convert to CSV")
+            st.success("✅ Excel file detected → Perfect for CSV conversion!")
             
             df = pd.read_excel(uploaded_file)
+            st.markdown("#### 👀 Data Preview")
             st.dataframe(df.head(10), use_container_width=True)
+            st.caption(f"📊 {len(df)} rows × {len(df.columns)} columns")
             
             if st.button("🔄 Convert to CSV", key="auto_xlsx", type="primary"):
-                csv_data = convert_xlsx_to_csv(uploaded_file)
-                if csv_data:
-                    st.markdown('<div class="success-box">✅ Converted Successfully!</div>', unsafe_allow_html=True)
-                    st.download_button(
-                        "⬇️ Download CSV",
-                        csv_data,
-                        f"{os.path.splitext(uploaded_file.name)[0]}.csv",
-                        "text/csv",
-                        use_container_width=True
-                    )
+                with st.spinner("✨ Converting to CSV..."):
+                    csv_data = convert_xlsx_to_csv(uploaded_file)
+                    if csv_data:
+                        st.markdown('<div class="success-box">✅ Converted Successfully!</div>', unsafe_allow_html=True)
+                        st.download_button(
+                            "⬇️ Download CSV File",
+                            csv_data,
+                            f"{os.path.splitext(uploaded_file.name)[0]}.csv",
+                            "text/csv",
+                            use_container_width=True
+                        )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer with information
 st.markdown("---")
-with st.expander("ℹ️ Supported Formats & Tips"):
+with st.expander("📚 Supported Formats & Pro Tips"):
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
         ### 🖼️ Images
-        **Supported:**
-        - PNG (Lossless, transparency)
-        - JPG/JPEG (Compressed, smaller)
-        - WEBP (Modern, efficient)
-        - BMP (Uncompressed)
-        - ICO (Icons)
+        **Supported Formats:**
+        - 🟢 **PNG** - Lossless, transparency
+        - 🔵 **JPG/JPEG** - Compressed, smaller size
+        - 🟣 **WEBP** - Modern, efficient
+        - 🟡 **BMP** - Uncompressed
+        - 🔴 **ICO** - Icons & favicons
         
-        **Best Use:**
-        - Web: WEBP or JPG
-        - Print: PNG or BMP
-        - Icons: ICO
+        **💡 Best Use Cases:**
+        - **Web**: WEBP or JPG
+        - **Print**: PNG or BMP
+        - **Icons**: ICO
+        - **Transparency**: PNG or WEBP
         """)
     
     with col2:
         st.markdown("""
-        ### 🎵 Audio
-        **Supported:**
-        - MP3 (Universal, compressed)
-        - WAV (Uncompressed, quality)
-        - OGG (Open format, good compression)
+        ### 📄 Documents
+        **Supported Formats:**
+        - 📝 **TXT** → **PDF**
+        - 📊 **CSV** ↔ **XLSX**
         
-        **Best Use:**
-        - Music: MP3
-        - Editing: WAV
-        - Streaming: OGG
+        **💡 Best Use Cases:**
+        - **Sharing**: PDF (universal)
+        - **Data Analysis**: CSV/XLSX
+        - **Reports**: PDF
+        - **Import/Export**: CSV
+        
+        **🎯 Pro Tips:**
+        - PDF preserves formatting
+        - CSV is universal
+        - Excel adds features
         """)
     
     with col3:
         st.markdown("""
-        ### 📄 Documents
-        **Supported:**
-        - PDF (Universal, print-ready)
-        - CSV (Data, universal)
-        - XLSX (Excel, formatted)
-        - TXT (Plain text)
+        ### 📊 Spreadsheets
+        **Conversions:**
+        - CSV → Excel (XLSX)
+        - Excel (XLSX/XLS) → CSV
         
-        **Best Use:**
-        - Sharing: PDF
-        - Data analysis: CSV/XLSX
-        - Simple text: TXT
+        **💡 Advantages:**
+        - **CSV**: Simple, universal
+        - **Excel**: Formulas, formatting
+        
+        **⚡ Speed Tips:**
+        - Large files? Use CSV
+        - Need formulas? Use Excel
+        - Sharing data? Use CSV
+        - Professional reports? Excel
         """)
 
 st.markdown("---")
 
-with st.expander("🔒 Privacy & Security"):
+with st.expander("🔒 Privacy & Security Guarantee"):
     st.markdown("""
-    ### Your Privacy Matters
+    ### 🛡️ Your Data is 100% Safe
     
-    ✅ **All conversions happen in your browser** - Files never leave your device  
-    ✅ **No storage** - Files are not saved on any server  
-    ✅ **No tracking** - We don't collect or store your data  
-    ✅ **100% Free** - No registration, no hidden fees  
-    ✅ **Secure** - HTTPS encryption for all transfers  
+    ✅ **Browser-Only Processing** - All conversions happen locally in your browser  
+    ✅ **Zero Storage** - We never save, store, or access your files  
+    ✅ **No Tracking** - We don't collect any personal data or analytics  
+    ✅ **100% Free Forever** - No hidden costs, no registration required  
+    ✅ **HTTPS Secure** - All connections are encrypted  
+    ✅ **Open Source** - Transparent code you can verify  
     
-    ### How It Works
-    1. Upload your file
-    2. Choose output format
-    3. File is processed locally in your browser
-    4. Download converted file
-    5. Original file is automatically discarded
+    ### ⚡ How It Works
     
-    **Note:** For large audio files (>50MB), conversion may take a few minutes.
+    1. 📁 **Upload** your file (stays in your browser)
+    2. 🎯 **Select** output format
+    3. 🔄 **Convert** instantly (processed locally)
+    4. ⬇️ **Download** your converted file
+    5. 🗑️ **Auto-delete** - Original file is discarded automatically
+    
+    ### 🌟 Why Choose Us?
+    
+    - **Lightning Fast** - No server delays
+    - **Unlimited Conversions** - Convert as many files as you want
+    - **No File Size Limits** - Convert files of any size
+    - **Works Offline** - Once loaded, works without internet
+    - **Mobile Friendly** - Works perfectly on all devices
     """)
 
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-border-radius: 10px; color: white; font-weight: 600;">
-    🔄 Made with ❤️ using Streamlit | Fast, Secure, & 100% Free File Converter
+<div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); 
+border-radius: 20px; color: white; font-weight: 700; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);" class="footer-gradient">
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔄 File Format Converter</div>
+    <div style="font-size: 1rem; opacity: 0.95;">Made with ❤️ using Streamlit | Fast • Secure • Beautiful • 100% Free</div>
+    <div style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.9;">✨ Convert Unlimited Files • No Registration • Privacy First ✨</div>
 </div>
 """, unsafe_allow_html=True)
