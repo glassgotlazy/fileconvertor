@@ -1,0 +1,7 @@
+streamlit
+Pillow
+pydub
+python-docx
+fpdf
+pandas
+openpyxl
